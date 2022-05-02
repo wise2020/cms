@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--扫描数据库配置文件-->
+    <context:property-placeholder location="classpath:db.properties"></context:property-placeholder>
+
+    <!--Druid配置数据源-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${db.Driver}"></property>
+        <property name="url" value="${db.Url}"></property>
+        <property name="username" value="${db.username}"></property>
+        <property name="password" value="${db.password}"></property>
+
+        <property name="initialSize" value="${db.initialSize}"/><!-- 配置初始化连接池数量-->
+        <property name="minIdle" value="${db.minIdle}"/><!-- 配置最小连接池数量-->
+        <property name="maxActive" value="${db.maxActive}"/><!-- 配置最大连接池数量-->
+        <property name="maxWait" value="${db.maxWait}"/><!-- 配置获取连接等待超时的时间 单位毫秒-->
+        <property name="useUnfairLock" value="${db.useUnfairLock}"/><!--使用非公平锁-->
+        <property name="timeBetweenEvictionRunsMillis"
+                  value="${db.timeBetweenEvictionRunsMillis}"/><!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+        <property name="minEvictableIdleTimeMillis"
+                  value="${db.minEvictableIdleTimeMillis}"/><!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+        <property name="validationQuery" value="${db.validationQuery}"/><!--用来检测连接是否有效的sql，要求是一个查询语句。-->
+        <property name="testWhileIdle"
+                  value="${db.testWhileIdle}"/><!--申请连接的时候检测，如果空闲时间大于timeBetweenEvictionRunsMillis，执行validationQuery检测连接是否有效。-->
+        <property name="testOnBorrow" value="${db.testOnBorrow}"/><!--申请连接时执行validationQuery检测连接是否有效，-->
+        <property name="testOnReturn" value="${db.testOnReturn}"/><!--归还连接时执行validationQuery检测连接是否有效，-->
+        <property name="poolPreparedStatements"
+                  value="${db.poolPreparedStatements}"/><!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
+        <property name="maxOpenPreparedStatements" value="${db.maxOpenPreparedStatements}"/>
+        <property name="filters" value="${db.filters}"/><!-- 配置监控统计拦截的filters，去掉后监控界面sql无法统计 -->
+    </bean>
+
+    <!-- mybatis和spring完美整合，不需要mybatis的配置映射文件 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--获取连接数据源-->
+        <property name="dataSource" ref="dataSource"></property>
+        <!--设置实体类别名，需要使用映射文件时，无需在写全路径，可以直接写类名-->
+        <property name="typeAliasesPackage" value="com.zrkj.model"></property>
+        <property name="mapperLocations" value="classpath:mapper/*.xml"></property>
+        <!--分页的配置文件-->
+        <property name="plugins">
+            <array>
+                <bean class="com.github.pagehelper.PageInterceptor">
+                    <property name="properties">
+                        <props>
+                            <prop key="helperDialect">mysql</prop>
+                            <prop key="resonable">true</prop>
+                        </props>
+                    </property>
+                </bean>
+            </array>
+        </property>
+    </bean>
+
+    <!-- Mapper接口所在包名，Spring会自动查找其下的类 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.zrkj.mapper"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+    </bean>
+</beans>
